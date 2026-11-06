@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusVibe — React CRUD Event & Club Platform (Lab 5 & 6)</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React 18, ReactDOM 18 & Babel Standalone -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "Inter", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"],
+          },
+          colors: {
+            brand: {
+              50: "#eff6ff",
+              100: "#dbeafe",
+              500: "#2563eb",
+              600: "#1d4ed8",
+              700: "#1e40af",
+            },
+            accent: {
+              amber: "#f59e0b",
+              emerald: "#10b981",
+              rose: "#f43f5e",
+              cyan: "#06b6d4",
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-body antialiased selection:bg-brand-500 selection:text-white min-h-screen">
+
+  <div id="root"></div>
+
+  <!-- React Application Source Code -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // Initial seed dataset (mirrors db.json)
+    const INITIAL_EVENTS = [
+      {
+        id: "ev-101",
+        title: "HackTheCampus 2026: 24h AI Sprint",
+        category: "Technical",
+        date: "2026-03-22",
+        time: "09:00 AM",
+        venue: "SkyView CS Innovation Lab, Central Campus",
+        organizer: "CodeCrafters Guild & Dept of CSE",
+        capacity: 250,
+        registered: 184,
+        mode: "In-Person",
+        accessLevel: "Standard Student Entry",
+        description: "Annual 24-hour inter-collegiate hackathon featuring AI/ML track, Web3 decentralized apps, and smart campus automation with ₹1,50,000 in prizes.",
+        image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80",
+        status: "Active"
+      },
+      {
+        id: "ev-102",
+        title: "Dhwani 2026: Inter-College Battle of Bands",
+        category: "Cultural",
+        date: "2026-04-04",
+        time: "05:30 PM",
+        venue: "Main Amphitheatre, Block II",
+        organizer: "Christ Cultural Committee (CCC)",
+        capacity: 800,
+        registered: 620,
+        mode: "In-Person",
+        accessLevel: "Standard Student Entry",
+        description: "The marquee acoustic and electric band showdown of South India featuring 20+ collegiate rock and fusion teams under state-of-the-art stage lighting.",
+        image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80",
+        status: "Active"
+      },
+      {
+        id: "ev-103",
+        title: "Christ Premier Football League (CPL)",
+        category: "Sports",
+        date: "2026-04-12",
+        time: "04:00 PM",
+        venue: "Central Turf Sports Complex",
+        organizer: "Department of Physical Education",
+        capacity: 500,
+        registered: 340,
+        mode: "In-Person",
+        accessLevel: "Standard Student Entry",
+        description: "7-a-side floodlit football championship featuring knockout rounds between 16 academic department squads competing for the University Trophy.",
+        image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80",
+        status: "Active"
+      },
+      {
+        id: "ev-104",
+        title: "National Cyber Defense & Cloud Summit",
+        category: "Technical",
+        date: "2026-04-18",
+        time: "10:00 AM",
+        venue: "Auditorium IV, Kengeri Campus",
+        organizer: "CyberSec Guild & Industry Partners",
+        capacity: 300,
+        registered: 215,
+        mode: "Hybrid / Virtual",
+        accessLevel: "VIP Delegate",
+        description: "Keynote symposium with industry security engineers exploring zero-trust architecture, cloud security, and hands-on capture-the-flag competitions.",
+        image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
+        status: "Active"
+      },
+      {
+        id: "ev-105",
+        title: "Nritya Natya: Classical & Contemporary Dance Fest",
+        category: "Cultural",
+        date: "2026-04-25",
+        time: "06:00 PM",
+        venue: "Main University Auditorium",
+        organizer: "Natya Classical Dance Society",
+        capacity: 650,
+        registered: 490,
+        mode: "In-Person",
+        accessLevel: "Standard Student Entry",
+        description: "Celebration of Indian heritage dance forms including Bharatanatyam, Kathak, and modern fusion choreographies by renowned student performers.",
+        image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=800&q=80",
+        status: "Active"
+      },
+      {
+        id: "ev-106",
+        title: "Collegiate Startup Pitch & Venture Showcase",
+        category: "Management",
+        date: "2026-05-02",
+        time: "11:00 AM",
+        venue: "Christ Incubation & Innovation Hub",
+        organizer: "E-Cell & Management Guild",
+        capacity: 200,
+        registered: 145,
+        mode: "Hybrid / Virtual",
+        accessLevel: "VIP Delegate",
+        description: "Student entrepreneurs pitch disruptive technology and social business ventures to angel investors and seed accelerator panels for seed grants.",
+        image: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=800&q=80",
+        status: "Active"
+      }
+    ];
+
+    // ==========================================
+    // COMPONENT: Toast Notification
+    // ==========================================
+    function Toast({ toast, onClose }) {
+      if (!toast.visible) return null;
+      const isSuccess = toast.type === "success";
+      return (
+        <div className="fixed bottom-6 right-6 z-50 animate-fade-in max-w-md">
+          <div className={`flex items-start gap-3 p-4 rounded-2xl shadow-2xl border text-white ${
+            isSuccess ? "bg-slate-900 border-emerald-500/50" : "bg-red-950 border-red-500/50"
+          }`}>
+            <span className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold ${
+              isSuccess ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
+            }`}>
+              <i className={`fa-solid ${isSuccess ? "fa-check" : "fa-triangle-exclamation"}`}></i>
+            </span>
+            <div className="flex-1 pr-2">
+              <h4 className="font-sans font-bold text-sm text-white">{toast.title}</h4>
+              <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">{toast.message}</p>
+            </div>
+            <button onClick={onClose} className="text-slate-400 hover:text-white p-1 text-xs">
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // COMPONENT: Navbar
+    // ==========================================
+    function Navbar({ searchQuery, setSearchQuery, onOpenCreate, onResetData, eventCount }) {
+      return (
+        <header className="fixed top-0 left-0 right-0 z-40 glass-nav border-b border-slate-200/80 transition-all duration-300">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-20">
+              
+              {/* Brand Logo & Christ Badge */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-blue-500 flex items-center justify-center text-white shadow-md shadow-brand-500/30">
+                  <i className="fa-brands fa-react text-xl animate-spin-slow"></i>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-sans font-extrabold text-xl tracking-tight text-slate-900">CampusVibe</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-blue-50 text-brand-700 border border-blue-200/60">
+                      React CRUD • Lab 5
+                    </span>
+                  </div>
+                  <p className="text-[11px] font-medium text-slate-500">Christ University Event Registry</p>
+                </div>
+              </div>
+
+              {/* Real-Time Live Search (Bonus Requirement) */}
+              <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
+                <div className="relative w-full">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i className="fa-solid fa-magnifying-glass text-xs"></i>
+                  </span>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search events by title, venue, or guild (⌘K)..."
+                    className="w-full pl-10 pr-12 py-2 rounded-xl bg-slate-100/80 border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-sans"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-xs text-slate-400 hover:text-slate-600"
+                    >
+                      <i className="fa-solid fa-xmark"></i>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons: Add Event (Create) & Reset */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  onClick={onResetData}
+                  title="Reload seed database defaults"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-all"
+                >
+                  <i className="fa-solid fa-rotate-left text-[11px]"></i>
+                  <span>Reset DB</span>
+                </button>
+
+                <button
+                  onClick={onOpenCreate}
+                  id="btnCreateEvent"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/25 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                >
+                  <i className="fa-solid fa-plus"></i>
+                  <span>Add New Event</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </header>
+      );
+    }
+
+    // ==========================================
+    // COMPONENT: Stats Bar
+    // ==========================================
+    function StatsBar({ events }) {
+      const stats = useMemo(() => {
+        const total = events.length;
+        const attendees = events.reduce((sum, ev) => sum + (Number(ev.registered) || 0), 0);
+        const categories = new Set(events.map(ev => ev.category)).size;
+        const totalCap = events.reduce((sum, ev) => sum + (Number(ev.capacity) || 0), 0);
+        return { total, attendees, categories, totalCap };
+      }, [events]);
+
+      return (
+        <section className="mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">Total Records</p>
+                <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-slate-900 mt-0.5">{stats.total}</h3>
+                <span className="text-[11px] text-emerald-600 font-medium inline-flex items-center gap-1 mt-1">
+                  <i className="fa-solid fa-database text-[10px]"></i> LocalStorage Synced
+                </span>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-blue-50 text-brand-600 flex items-center justify-center text-xl">
+                <i className="fa-solid fa-calendar-check"></i>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">Total RSVPs</p>
+                <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-brand-600 mt-0.5">{stats.attendees.toLocaleString()}</h3>
+                <span className="text-[11px] text-slate-500 font-medium mt-1 inline-block">Registered Students</span>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                <i className="fa-solid fa-users"></i>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">Categories</p>
+                <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-slate-900 mt-0.5">{stats.categories}</h3>
+                <span className="text-[11px] text-slate-500 font-medium mt-1 inline-block">Tech, Arts, Sports, Biz</span>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                <i className="fa-solid fa-tags"></i>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">Seat Capacity</p>
+                <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-slate-900 mt-0.5">{stats.totalCap.toLocaleString()}</h3>
+                <span className="text-[11px] text-slate-500 font-medium mt-1 inline-block">Across All Venues</span>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+                <i className="fa-solid fa-chair"></i>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      );
+    }
+
+    // ==========================================
+    // COMPONENT: Filter & Search Bar
+    // ==========================================
+    function FilterBar({ selectedCategory, setSelectedCategory, modeFilter, setModeFilter, visibleCount, totalCount }) {
+      const categories = ["All", "Technical", "Cultural", "Sports", "Management"];
+
+      return (
+        <div className="mb-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          
+          {/* Category Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  selectedCategory === cat
+                    ? "bg-brand-600 text-white shadow-sm shadow-brand-500/30"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Mode Selector & Record Count Badge */}
+          <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 font-medium hidden sm:inline">Mode:</span>
+              <select
+                value={modeFilter}
+                onChange={(e) => setModeFilter(e.target.value)}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 font-sans"
+              >
+                <option value="All">All Attendance Modes</option>
+                <option value="In-Person">In-Person Only</option>
+                <option value="Hybrid / Virtual">Hybrid / Virtual</option>
+              </select>
+            </div>
+
+            <div className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200/80 text-xs font-mono text-slate-600">
+              Showing <span className="font-bold text-slate-900">{visibleCount}</span> of {totalCount} Records
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    // ==========================================
+    // COMPONENT: Event Card (Read + Action Buttons)
+    // ==========================================
+    function EventCard({ event, onEdit, onDelete, onIssuePass }) {
+      const pct = Math.min(Math.round((event.registered / event.capacity) * 100), 100);
+      const isHybrid = event.mode.includes("Virtual") || event.mode.includes("Hybrid");
+      const isVip = event.accessLevel.includes("VIP");
+
+      const categoryColors = {
+        Technical: "bg-blue-50 text-brand-700 border-blue-200",
+        Cultural: "bg-rose-50 text-accent-rose border-rose-200",
+        Sports: "bg-emerald-50 text-accent-emerald border-emerald-200",
+        Management: "bg-amber-50 text-amber-700 border-amber-200",
+      };
+
+      return (
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden group">
+          
+          {/* Card Image Banner */}
+          <div className="relative aspect-[16/9] w-full bg-slate-100 overflow-hidden">
+            <img
+              src={event.image}
+              alt={event.title}
+              onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80"; }}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent"></div>
+            
+            {/* Top Badges */}
+            <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-wider uppercase border backdrop-blur-md bg-white/90 shadow-sm ${
+                categoryColors[event.category] || "bg-slate-100 text-slate-700"
+              }`}>
+                {event.category}
+              </span>
+
+              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono tracking-wide ${
+                isHybrid ? "bg-purple-600 text-white" : "bg-emerald-600 text-white"
+              }`}>
+                <i className={`fa-solid ${isHybrid ? "fa-video" : "fa-building"} mr-1 text-[9px]`}></i>
+                {event.mode}
+              </span>
+            </div>
+
+            {/* Bottom Organizer Tag */}
+            <div className="absolute bottom-2.5 left-3 right-3">
+              <span className="text-[11px] font-medium text-white/90 truncate block">
+                <i className="fa-solid fa-users text-[10px] mr-1 text-blue-300"></i>
+                {event.organizer}
+              </span>
+            </div>
+          </div>
+
+          {/* Card Body */}
+          <div className="p-5 flex-1 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                  isVip ? "bg-amber-100 text-amber-800 border border-amber-300" : "bg-slate-100 text-slate-600"
+                }`}>
+                  <i className={`fa-solid ${isVip ? "fa-crown" : "fa-ticket"} text-[9px] mr-1 text-amber-600`}></i>
+                  {event.accessLevel}
+                </span>
+                <span className="text-[11px] text-slate-400 font-mono">ID: {event.id}</span>
+              </div>
+
+              <h3 className="font-sans font-bold text-base text-slate-900 group-hover:text-brand-600 transition-colors leading-snug">
+                {event.title}
+              </h3>
+
+              <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
+                {event.description}
+              </p>
+
+              {/* Logistics Metadata */}
+              <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs text-slate-600 font-medium">
+                <div className="flex items-center gap-2">
+                  <i className="fa-regular fa-calendar text-brand-600 w-4 text-center"></i>
+                  <span>{event.date} • {event.time}</span>
+                </div>
+                <div className="flex items-center gap-2 truncate">
+                  <i className="fa-solid fa-location-dot text-rose-500 w-4 text-center"></i>
+                  <span className="truncate">{event.venue}</span>
+                </div>
+              </div>
+
+              {/* Capacity Progress Bar */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 mb-1">
+                  <span>RSVP Fill Rate:</span>
+                  <span className="font-bold text-slate-800">{event.registered} / {event.capacity} ({pct}%)</span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      pct > 80 ? "bg-accent-rose" : "bg-brand-600"
+                    }`}
+                    style={{ width: `${pct}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons (CRUD Triggers) */}
+            <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+              <button
+                onClick={() => onIssuePass(event)}
+                className="flex-1 py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-brand-700 text-xs font-bold transition-all text-center"
+              >
+                <i className="fa-solid fa-qrcode mr-1.5"></i>
+                <span>Get Pass</span>
+              </button>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => onEdit(event)}
+                  title="Update this event record"
+                  className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs transition-all"
+                >
+                  <i className="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button
+                  onClick={() => onDelete(event)}
+                  title="Delete this event record"
+                  className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center text-xs transition-all"
+                >
+                  <i className="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      );
+    }
+
+    // ==========================================
+    // COMPONENT: Event Form Modal (CREATE & UPDATE)
+    // Multiple input fields, Radio Buttons, Select Dropdown
+    // ==========================================
+    function EventFormModal({ isOpen, onClose, onSubmit, editingEvent, createDraft }) {
+      if (!isOpen) return null;
+
+      const isEdit = Boolean(editingEvent);
+
+      const [formData, setFormData] = useState({
+        title: editingEvent ? editingEvent.title : (createDraft ? createDraft.title : ""),
+        category: editingEvent ? editingEvent.category : (createDraft ? createDraft.category : "Technical"),
+        date: editingEvent ? editingEvent.date : (createDraft ? createDraft.date : "2026-04-10"),
+        time: editingEvent ? editingEvent.time : (createDraft ? createDraft.time : "10:00 AM"),
+        venue: editingEvent ? editingEvent.venue : (createDraft ? createDraft.venue : ""),
+        organizer: editingEvent ? editingEvent.organizer : (createDraft ? createDraft.organizer : ""),
+        capacity: editingEvent ? editingEvent.capacity : (createDraft ? createDraft.capacity : 300),
+        registered: editingEvent ? editingEvent.registered : 0,
+        mode: editingEvent ? editingEvent.mode : "In-Person",
+        accessLevel: editingEvent ? editingEvent.accessLevel : "Standard Student Entry",
+        description: editingEvent ? editingEvent.description : (createDraft ? createDraft.description : ""),
+        image: editingEvent ? editingEvent.image : (createDraft ? createDraft.image : "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80"),
+      });
+
+      const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+      };
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        onSubmit(formData);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${
+                  isEdit ? "bg-amber-500" : "bg-brand-600"
+                }`}>
+                  <i className={`fa-solid ${isEdit ? "fa-pen-to-square" : "fa-plus"}`}></i>
+                </div>
+                <div>
+                  <h3 className="font-sans font-bold text-lg text-slate-900">
+                    {isEdit ? "Update Event Record (PUT / UPDATE)" : "Create New Campus Event (POST / CREATE)"}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {isEdit ? `Modifying event ID: ${editingEvent.id}` : "Fill out mandatory fields, select dropdown, and radio options"}
+                  </p>
+                </div>
+              </div>
+              <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-400 hover:text-slate-700">
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            {/* Modal Body Form */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto font-sans">
+              
+              {/* Event Title */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Event Title <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  required
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="e.g. AI Innovate Summit 2026"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-sans"
+                />
+              </div>
+
+              {/* Grid 1: Category Dropdown & Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* SELECT DROPDOWN (Mandatory Rubric Component) */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Category (Select Dropdown) <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 font-sans"
+                  >
+                    <option value="Technical">Technical</option>
+                    <option value="Cultural">Cultural</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Management">Management</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Date <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="date"
+                    required
+                    value={formData.date}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* Grid 2: Venue & Organizer */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Campus Venue <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="venue"
+                    required
+                    value={formData.venue}
+                    onChange={handleChange}
+                    placeholder="e.g. Auditorium IV, Central Campus"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-sans"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Organizing Club / Dept <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="organizer"
+                    required
+                    value={formData.organizer}
+                    onChange={handleChange}
+                    placeholder="e.g. IEEE Student Branch"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* Grid 3: Capacity & Time */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Max Capacity <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="capacity"
+                    min="10"
+                    max="5000"
+                    required
+                    value={formData.capacity}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-sans"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Start Time
+                  </label>
+                  <input
+                    type="text"
+                    name="time"
+                    value={formData.time}
+                    onChange={handleChange}
+                    placeholder="e.g. 10:00 AM"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* RADIO BUTTONS GROUP 1: Attendance Mode (Mandatory Rubric Component) */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Attendance Mode (Radio Buttons) <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                    formData.mode === "In-Person" ? "bg-white border-brand-500 ring-2 ring-brand-500/20 text-brand-700 font-bold" : "border-slate-200 text-slate-600 bg-white/50"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="mode"
+                      value="In-Person"
+                      checked={formData.mode === "In-Person"}
+                      onChange={handleChange}
+                      className="text-brand-600 focus:ring-brand-500"
+                    />
+                    <span className="text-xs">In-Person Campus Attendance</span>
+                  </label>
+
+                  <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                    formData.mode === "Hybrid / Virtual" ? "bg-white border-purple-500 ring-2 ring-purple-500/20 text-purple-700 font-bold" : "border-slate-200 text-slate-600 bg-white/50"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="mode"
+                      value="Hybrid / Virtual"
+                      checked={formData.mode === "Hybrid / Virtual"}
+                      onChange={handleChange}
+                      className="text-purple-600 focus:ring-purple-500"
+                    />
+                    <span className="text-xs">Hybrid / Virtual Broadcast</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* RADIO BUTTONS GROUP 2: Access Level (Mandatory Rubric Component) */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Access Level Tier (Radio Buttons) <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                    formData.accessLevel === "Standard Student Entry" ? "bg-white border-brand-500 ring-2 ring-brand-500/20 text-brand-700 font-bold" : "border-slate-200 text-slate-600 bg-white/50"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="accessLevel"
+                      value="Standard Student Entry"
+                      checked={formData.accessLevel === "Standard Student Entry"}
+                      onChange={handleChange}
+                      className="text-brand-600 focus:ring-brand-500"
+                    />
+                    <span className="text-xs">Standard Student Entry</span>
+                  </label>
+
+                  <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                    formData.accessLevel === "VIP Delegate" ? "bg-white border-amber-500 ring-2 ring-amber-500/20 text-amber-700 font-bold" : "border-slate-200 text-slate-600 bg-white/50"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="accessLevel"
+                      value="VIP Delegate"
+                      checked={formData.accessLevel === "VIP Delegate"}
+                      onChange={handleChange}
+                      className="text-amber-600 focus:ring-amber-500"
+                    />
+                    <span className="text-xs">VIP Delegate / Reserved Pass</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Description Textarea */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Event Summary & Details
+                </label>
+                <textarea
+                  name="description"
+                  rows="3"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Provide schedule details, chief guest, prizes, or rules..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-sans"
+                ></textarea>
+              </div>
+
+              {/* Image URL */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Cover Photo URL
+                </label>
+                <input
+                  type="url"
+                  name="image"
+                  value={formData.image}
+                  onChange={handleChange}
+                  placeholder="https://images.unsplash.com/photo-..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono"
+                />
+              </div>
+
+              {/* Modal Action Buttons */}
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  id="btnSubmitModal"
+                  className={`px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all ${
+                    isEdit
+                      ? "bg-amber-600 hover:bg-amber-700 shadow-amber-500/25"
+                      : "bg-brand-600 hover:bg-brand-700 shadow-brand-500/25"
+                  }`}
+                >
+                  <i className={`fa-solid ${isEdit ? "fa-check" : "fa-plus"} mr-1.5`}></i>
+                  <span>{isEdit ? "Save & Update Record" : "Create Event Record"}</span>
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // COMPONENT: Delete Confirm Modal (DELETE)
+    // ==========================================
+    function DeleteConfirmModal({ target, onClose, onConfirm }) {
+      if (!target) return null;
+
+      return (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 p-6 text-center">
+            
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 text-accent-rose mx-auto flex items-center justify-center text-2xl mb-4 border border-rose-200/60">
+              <i className="fa-solid fa-triangle-exclamation"></i>
+            </div>
+
+            <h3 className="font-sans font-extrabold text-xl text-slate-900 mb-1">
+              Delete Event Record?
+            </h3>
+            
+            <p className="text-xs text-slate-500 leading-relaxed mb-4">
+              Are you sure you want to permanently delete <strong className="text-slate-800">"{target.title}"</strong> (ID: {target.id})? This action will remove the entry from state and LocalStorage database.
+            </p>
+
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 text-left font-mono mb-6">
+              <div>• Category: {target.category}</div>
+              <div>• Date: {target.date}</div>
+              <div>• Venue: {target.venue}</div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => onConfirm(target.id)}
+                id="btnConfirmDelete"
+                className="flex-1 py-2.5 rounded-xl bg-accent-rose hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-500/30 transition-all"
+              >
+                <i className="fa-solid fa-trash-can mr-1.5"></i>
+                <span>Confirm Delete</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // COMPONENT: Pass Modal (Digital Verification)
+    // ==========================================
+    function PassModal({ event, onClose }) {
+      if (!event) return null;
+
+      return (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+            
+            <div className="p-6 bg-gradient-to-tr from-brand-700 via-brand-600 to-blue-500 text-white relative">
+              <button onClick={onClose} className="absolute top-4 right-4 text-white/70 hover:text-white">
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+              <div className="text-[10px] uppercase font-mono tracking-wider font-semibold text-blue-200">Official Student Pass</div>
+              <h3 className="font-sans font-bold text-lg mt-1">{event.title}</h3>
+              <p className="text-xs text-blue-100 mt-0.5">{event.category} • {event.mode}</p>
+            </div>
+
+            <div className="p-6 text-center space-y-4 font-sans">
+              <div className="w-40 h-40 mx-auto bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-4">
+                <i className="fa-solid fa-qrcode text-6xl text-slate-800 mb-2"></i>
+                <span className="text-[9px] font-mono text-slate-500 tracking-wider">VERIFIED • CHRIST UNIV</span>
+              </div>
+
+              <div className="text-left bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-1 font-mono">
+                <div>Attendee: <strong className="text-slate-800">Anushya C.</strong></div>
+                <div>Register No: <strong className="text-slate-800">2648508</strong></div>
+                <div>Tier: <strong className="text-brand-700">{event.accessLevel}</strong></div>
+                <div>Venue: <strong className="text-slate-800">{event.venue}</strong></div>
+              </div>
+
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
+                <i className="fa-solid fa-circle-check"></i>
+                <span>● VERIFIED & CONFIRMED</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 text-center">
+              <button onClick={onClose} className="w-full py-2 rounded-xl bg-slate-800 text-white text-xs font-bold">
+                Close Ticket Preview
+              </button>
+            </div>
+
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // MAIN APP COMPONENT
+    // State Management: useState & useEffect
+    // ==========================================
+    function App() {
+      // 1. Events State with LocalStorage Persistence
+      const [events, setEvents] = useState(() => {
+        try {
+          const saved = localStorage.getItem("campusvibe_events_react");
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch (e) {
+          console.error("LocalStorage load error:", e);
+        }
+        return INITIAL_EVENTS;
+      });
+
+      // 2. Filter & Search State
+      const [searchQuery, setSearchQuery] = useState("");
+      const [selectedCategory, setSelectedCategory] = useState("All");
+      const [modeFilter, setModeFilter] = useState("All");
+
+      // 3. Modals State
+      const [isFormOpen, setIsFormOpen] = useState(false);
+      const [editingEvent, setEditingEvent] = useState(null);
+      const [createDraft, setCreateDraft] = useState(null);
+      const [deleteTarget, setDeleteTarget] = useState(null);
+      const [passTarget, setPassTarget] = useState(null);
+
+      // 4. Toast Notification State
+      const [toast, setToast] = useState({ visible: false, title: "", message: "", type: "success" });
+
+      const showToast = (title, message, type = "success") => {
+        setToast({ visible: true, title, message, type });
+        setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 4000);
+      };
+
+      // Sync state to LocalStorage upon every mutation
+      useEffect(() => {
+        try {
+          localStorage.setItem("campusvibe_events_react", JSON.stringify(events));
+        } catch (e) {
+          console.error("LocalStorage save error:", e);
+        }
+      }, [events]);
+
+      // Hash-based state initializers for automated testing & lab demonstration
+      useEffect(() => {
+        const hash = window.location.hash;
+        if (hash === "#create") {
+          setEditingEvent(null);
+          setCreateDraft({
+            title: "National AI & Robotics Symposium 2026",
+            category: "Technical",
+            date: "2026-05-15",
+            time: "09:30 AM",
+            venue: "Kengeri Campus Auditorium IV",
+            organizer: "Robotics Club & Dept of ECE",
+            capacity: 350,
+            registered: 0,
+            mode: "In-Person",
+            accessLevel: "Standard Student Entry",
+            description: "Inter-collegiate robotics and autonomous systems competition with live drone racing and hardware exhibits.",
+            image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80"
+          });
+          setIsFormOpen(true);
+        } else if (hash === "#update") {
+          const target = events.find(e => e.id === "ev-101") || events[0];
+          setEditingEvent(target);
+          setIsFormOpen(true);
+        } else if (hash === "#delete") {
+          const target = events.find(e => e.id === "ev-102") || events[1];
+          setDeleteTarget(target);
+        } else if (hash === "#search") {
+          setSearchQuery("Hack");
+        }
+      }, []);
+
+      // Global keyboard shortcut: ⌘K or Ctrl+K focuses search
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+            e.preventDefault();
+            const searchInput = document.querySelector("header input[type='text']");
+            if (searchInput) searchInput.focus();
+          }
+          if (e.key === "Escape") {
+            setIsFormOpen(false);
+            setDeleteTarget(null);
+            setPassTarget(null);
+          }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+      }, []);
+
+      // Filtered Events (Bonus Search & Filter Requirement)
+      const filteredEvents = useMemo(() => {
+        return events.filter(ev => {
+          const matchesCat = selectedCategory === "All" || ev.category === selectedCategory;
+          const matchesMode = modeFilter === "All" || ev.mode === modeFilter;
+          const q = searchQuery.toLowerCase().trim();
+          const matchesSearch = !q || 
+            ev.title.toLowerCase().includes(q) ||
+            ev.venue.toLowerCase().includes(q) ||
+            ev.organizer.toLowerCase().includes(q) ||
+            ev.category.toLowerCase().includes(q);
+          return matchesCat && matchesMode && matchesSearch;
+        });
+      }, [events, selectedCategory, modeFilter, searchQuery]);
+
+      // --- CRUD HANDLERS ---
+
+      // 1. CREATE or UPDATE
+      const handleSaveEvent = (formData) => {
+        if (editingEvent) {
+          // UPDATE
+          setEvents(prev => prev.map(ev => ev.id === editingEvent.id ? { ...ev, ...formData } : ev));
+          showToast("Record Updated (UPDATE)", `"${formData.title}" was successfully updated in database.`);
+        } else {
+          // CREATE
+          const newId = `ev-${Date.now().toString().slice(-4)}`;
+          const newEvent = {
+            id: newId,
+            ...formData,
+            registered: 0,
+            status: "Active"
+          };
+          setEvents(prev => [newEvent, ...prev]);
+          showToast("Event Created (CREATE)", `"${formData.title}" added to campus database.`);
+        }
+        setIsFormOpen(false);
+        setEditingEvent(null);
+      };
+
+      // 2. DELETE
+      const handleConfirmDelete = (id) => {
+        const target = events.find(ev => ev.id === id);
+        setEvents(prev => prev.filter(ev => ev.id !== id));
+        setDeleteTarget(null);
+        showToast("Record Deleted (DELETE)", `"${target ? target.title : id}" was removed from database.`, "error");
+      };
+
+      // 3. RESET DATABASE DEFAULTS
+      const handleResetData = () => {
+        setEvents(INITIAL_EVENTS);
+        localStorage.setItem("campusvibe_events_react", JSON.stringify(INITIAL_EVENTS));
+        showToast("Database Reset", "Re-seeded initial 6 events from db.json.");
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {/* Navigation Bar */}
+          <Navbar
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onOpenCreate={() => { setEditingEvent(null); setIsFormOpen(true); }}
+            onResetData={handleResetData}
+            eventCount={events.length}
+          />
+
+          {/* Main Content Area */}
+          <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20 w-full">
+            
+            {/* Page Header */}
+            <div className="mb-8">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-xs font-bold text-brand-700 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Christ University Bangalore • FSD Lab Exercise 5 & 6</span>
+                  </div>
+                  <h1 className="font-sans text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                    Event & Club Management Portal
+                  </h1>
+                  <p className="text-sm text-slate-500 mt-1 max-w-2xl">
+                    Demonstrating functional React components, useState hooks, controlled forms, multiple inputs, radio buttons, select dropdowns, and full CRUD operations.
+                  </p>
+                </div>
+
+                {/* Quick Add Button */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => { setEditingEvent(null); setIsFormOpen(true); }}
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 shadow-xl shadow-brand-500/25 transition-all"
+                  >
+                    <i className="fa-solid fa-circle-plus"></i>
+                    <span>Register New Event</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Real-Time Computed Stats Bar */}
+            <StatsBar events={events} />
+
+            {/* Filter Bar with Select and Categories */}
+            <FilterBar
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              modeFilter={modeFilter}
+              setModeFilter={setModeFilter}
+              visibleCount={filteredEvents.length}
+              totalCount={events.length}
+            />
+
+            {/* Dynamic Event Grid (READ Operation) */}
+            {filteredEvents.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredEvents.map(event => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    onEdit={(ev) => { setEditingEvent(ev); setIsFormOpen(true); }}
+                    onDelete={(ev) => setDeleteTarget(ev)}
+                    onIssuePass={(ev) => setPassTarget(ev)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+                <div className="w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center text-2xl mb-3">
+                  <i className="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <h3 className="font-sans font-bold text-base text-slate-800">No Events Found</h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                  No event records match your active query "{searchQuery}" or category filter "{selectedCategory}".
+                </p>
+                <button
+                  onClick={() => { setSearchQuery(""); setSelectedCategory("All"); setModeFilter("All"); }}
+                  className="mt-4 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
+
+          </main>
+
+          {/* Footer */}
+          <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+            <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 font-sans">
+              <div>
+                <strong>CampusVibe</strong> • Department of Computer Science & Engineering, Christ University
+              </div>
+              <div className="font-mono text-[11px]">
+                Student: <span className="font-bold text-slate-800">Anushya C.</span> (Reg No: <span className="font-bold text-brand-700">2648508</span>)
+              </div>
+            </div>
+          </footer>
+
+          {/* Modals */}
+          <EventFormModal
+            isOpen={isFormOpen}
+            editingEvent={editingEvent}
+            createDraft={createDraft}
+            onClose={() => { setIsFormOpen(false); setEditingEvent(null); setCreateDraft(null); }}
+            onSubmit={handleSaveEvent}
+          />
+
+          <DeleteConfirmModal
+            target={deleteTarget}
+            onClose={() => setDeleteTarget(null)}
+            onConfirm={handleConfirmDelete}
+          />
+
+          <PassModal
+            event={passTarget}
+            onClose={() => setPassTarget(null)}
+          />
+
+          <Toast
+            toast={toast}
+            onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+          />
+
+        </div>
+      );
+    }
+
+    // Render the React 18 Application
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
